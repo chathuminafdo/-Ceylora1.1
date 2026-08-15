@@ -116,5 +116,11 @@ sand) rather than a photo.
 4. `npm run lint` runs ESLint over the project.
 
 ## Screenshots
-_Add screenshots of the Home, Destination Detail, Trip Planner, and Settings
-screens here before submission._
+
+| Home | Destination Detail |
+|---|---|
+| ![Home](assets/images/screenshot-home.jpg) | ![Destination Detail](assets/images/screenshot-detail.jpg) |
+
+| Trip Planner | Settings |
+|---|---|
+| ![Trip Planner](assets/images/screenshot-trip.jpg) | ![Settings](assets/images/screenshot-settings.jpg) |
