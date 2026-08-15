@@ -1,50 +1,47 @@
-# Welcome to your Expo app 👋
+# BloodLink — Blood Donor Directory
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+## Target Domain
+Healthcare — emergency blood supply coordination.
 
-## Get started
+## Problem Statement
+When a hospital or blood bank needs blood urgently, coordinators currently work through
+paper lists or spreadsheets, calling donors one by one until they find someone with the
+right blood type who is actually available. This is slow and error-prone in a
+time-critical situation.
 
-1. Install dependencies
+BloodLink gives a hospital/blood bank coordinator a searchable, filterable directory of
+registered donors so they can immediately see who has a compatible blood type, where
+they are located, and whether they are currently available to donate.
 
+## How the App Solves It
+- **Home screen** — a `FlatList` of donors with a search bar (by name or area) and
+  blood-type filter chips, so a coordinator can narrow a list of donors down to
+  "O- donors near Colombo" in seconds instead of scrolling a spreadsheet.
+- **Donor Detail screen** — tap any donor to see their phone number, last donation
+  date, and an availability toggle, plus a one-tap "Call Donor" button.
+- **Settings screen** — set a default blood-type filter so the Home screen opens
+  already scoped to the type the coordinator needs most often.
+
+## Screens
+1. **Home** (`app/(tabs)/index.tsx`) — donor list, search, blood-type filter.
+2. **Donor Detail** (`app/donor/[id].tsx`) — full donor profile, availability toggle.
+3. **Settings** (`app/(tabs)/settings.tsx`) — default blood-type filter preference.
+
+## State (`useState`)
+- Search text and selected blood-type filter on the Home screen.
+- Availability toggle on the Donor Detail screen.
+- Default blood-type preference on the Settings screen.
+
+## Setup Instructions
+1. Install dependencies:
    ```bash
    npm install
    ```
-
-2. Start the app
-
+2. Start the app:
    ```bash
    npx expo start
    ```
+3. Scan the QR code with Expo Go on Android, or press `a` to launch an Android emulator.
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Screenshots
+_Add screenshots of the Home, Donor Detail, and Settings screens here before submission._

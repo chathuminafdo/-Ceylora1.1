@@ -1,98 +1,207 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useState } from "react";
+import {
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { router } from "expo-router";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { BLOOD_TYPES, BloodType, donors } from "@/data/donors";
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const [search, setSearch] = useState("");
+  const [selectedType, setSelectedType] = useState<BloodType | null>(null);
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  const filteredDonors = donors.filter((donor) => {
+    const matchesSearch =
+      donor.name.toLowerCase().includes(search.toLowerCase()) ||
+      donor.area.toLowerCase().includes(search.toLowerCase());
+    const matchesType = selectedType ? donor.bloodType === selectedType : true;
+    return matchesSearch && matchesType;
+  });
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Blood Donor Directory</Text>
+
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search by name or area..."
+        value={search}
+        onChangeText={setSearch}
+      />
+
+      <View style={styles.chipGrid}>
+        {BLOOD_TYPES.map((item) => {
+          const isSelected = selectedType === item;
+          return (
+            <Pressable
+              key={item}
+              style={[styles.chip, isSelected && styles.chipSelected]}
+              onPress={() => setSelectedType(isSelected ? null : item)}
+            >
+              <Text
+                style={[styles.chipText, isSelected && styles.chipTextSelected]}
+              >
+                {item}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <FlatList
+        data={filteredDonors}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <Pressable
+            style={styles.donorCard}
+            onPress={() => router.push(`/donor/${item.id}`)}
+          >
+            <View style={styles.bloodBadge}>
+              <Text style={styles.bloodBadgeText}>{item.bloodType}</Text>
+            </View>
+
+            <View style={styles.donorInfo}>
+              <Text style={styles.donorName}>{item.name}</Text>
+              <Text style={styles.donorArea}>{item.area}</Text>
+            </View>
+
+            <Text
+              style={[
+                styles.availability,
+                item.available ? styles.available : styles.unavailable,
+              ]}
+            >
+              {item.available ? "Available" : "Resting"}
+            </Text>
+          </Pressable>
+        )}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No donors found</Text>
+        }
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#f4f4f4",
+    paddingTop: 60,
+    paddingHorizontal: 20,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+
+  title: {
+    fontSize: 26,
+    fontWeight: "bold",
+    marginBottom: 16,
+    textAlign: "center",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+
+  searchInput: {
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+
+  chipGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+
+  chipSelected: {
+    backgroundColor: "#c0392b",
+    borderColor: "#c0392b",
+  },
+
+  chipText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+
+  chipTextSelected: {
+    color: "white",
+  },
+
+  donorCard: {
+    backgroundColor: "white",
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  bloodBadge: {
+    width: 45,
+    height: 45,
+    borderRadius: 25,
+    backgroundColor: "#c0392b",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
+  },
+
+  bloodBadgeText: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "white",
+  },
+
+  donorInfo: {
+    flex: 1,
+  },
+
+  donorName: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+
+  donorArea: {
+    fontSize: 14,
+    marginTop: 4,
+    color: "#555",
+  },
+
+  availability: {
+    fontSize: 13,
+    fontWeight: "600",
+  },
+
+  available: {
+    color: "#27ae60",
+  },
+
+  unavailable: {
+    color: "#999",
+  },
+
+  emptyText: {
+    textAlign: "center",
+    marginTop: 40,
+    fontSize: 16,
+    color: "#777",
   },
 });
