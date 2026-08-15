@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   FlatList,
   Pressable,
@@ -7,81 +7,189 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { router } from "expo-router";
 
-import { BLOOD_TYPES, BloodType, donors } from "@/data/donors";
+import {
+  Category,
+  categoryMeta,
+  destinations,
+} from "@/data/destinations";
+import { radius, spacing, useAppTheme } from "@/context/theme";
+import { useTrip } from "@/context/trip";
+import { DestinationCard } from "@/components/destination-card";
+
+const ALL_CATEGORIES = Object.keys(categoryMeta) as Category[];
+
+const CHIP_LABEL: Record<Category, string> = {
+  faith: "Faith",
+  fun: "Fun",
+  nature: "Nature",
+  beach: "Beach",
+  hillcountry: "Hills",
+  culture: "Culture",
+  wellness: "Wellness",
+  food: "Food",
+};
+
+function getGreeting() {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+const FEATURED = destinations.filter((place) => place.bestFor).slice(0, 8);
 
 export default function HomeScreen() {
+  const { colors } = useAppTheme();
+  const { isInTrip, addToTrip, removeFromTrip } = useTrip();
   const [search, setSearch] = useState("");
-  const [selectedType, setSelectedType] = useState<BloodType | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
 
-  const filteredDonors = donors.filter((donor) => {
+  const greeting = useMemo(getGreeting, []);
+
+  const filteredDestinations = destinations.filter((place) => {
+    const query = search.toLowerCase();
     const matchesSearch =
-      donor.name.toLowerCase().includes(search.toLowerCase()) ||
-      donor.area.toLowerCase().includes(search.toLowerCase());
-    const matchesType = selectedType ? donor.bloodType === selectedType : true;
-    return matchesSearch && matchesType;
+      place.name.toLowerCase().includes(query) ||
+      place.district.toLowerCase().includes(query) ||
+      place.province.toLowerCase().includes(query);
+    const matchesCategory = selectedCategory
+      ? place.categories.includes(selectedCategory)
+      : true;
+    return matchesSearch && matchesCategory;
   });
 
+  const toggleBookmark = (id: string) => {
+    if (isInTrip(id)) {
+      removeFromTrip(id);
+    } else {
+      addToTrip(id);
+    }
+  };
+
+  const showFeatured = search.length === 0 && selectedCategory === null;
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Blood Donor Directory</Text>
-
-      <TextInput
-        style={styles.searchInput}
-        placeholder="Search by name or area..."
-        value={search}
-        onChangeText={setSearch}
-      />
-
-      <View style={styles.chipGrid}>
-        {BLOOD_TYPES.map((item) => {
-          const isSelected = selectedType === item;
-          return (
-            <Pressable
-              key={item}
-              style={[styles.chip, isSelected && styles.chipSelected]}
-              onPress={() => setSelectedType(isSelected ? null : item)}
-            >
-              <Text
-                style={[styles.chipText, isSelected && styles.chipTextSelected]}
-              >
-                {item}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <FlatList
-        data={filteredDonors}
+        data={filteredDestinations}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.donorCard}
-            onPress={() => router.push(`/donor/${item.id}`)}
-          >
-            <View style={styles.bloodBadge}>
-              <Text style={styles.bloodBadgeText}>{item.bloodType}</Text>
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <View>
+            <Text style={[styles.greeting, { color: colors.subtext }]}>
+              {greeting} 👋
+            </Text>
+            <Text style={[styles.title, { color: colors.text }]}>
+              Discover Sri Lanka
+            </Text>
+
+            <TextInput
+              style={[
+                styles.searchInput,
+                {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  color: colors.text,
+                },
+              ]}
+              placeholder="Search district, province, or place"
+              placeholderTextColor={colors.subtext}
+              value={search}
+              onChangeText={setSearch}
+            />
+
+            <View style={styles.chipGrid}>
+              <Pressable
+                style={[
+                  styles.chip,
+                  { backgroundColor: colors.accentSoft },
+                  selectedCategory === null && { backgroundColor: colors.accent },
+                ]}
+                onPress={() => setSelectedCategory(null)}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    { color: colors.accent },
+                    selectedCategory === null && { color: colors.accentText },
+                  ]}
+                >
+                  All
+                </Text>
+              </Pressable>
+
+              {ALL_CATEGORIES.map((category) => {
+                const isSelected = selectedCategory === category;
+                return (
+                  <Pressable
+                    key={category}
+                    style={[
+                      styles.chip,
+                      { backgroundColor: colors.accentSoft },
+                      isSelected && { backgroundColor: colors.accent },
+                    ]}
+                    onPress={() =>
+                      setSelectedCategory(isSelected ? null : category)
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.chipText,
+                        { color: colors.accent },
+                        isSelected && { color: colors.accentText },
+                      ]}
+                    >
+                      {CHIP_LABEL[category]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
 
-            <View style={styles.donorInfo}>
-              <Text style={styles.donorName}>{item.name}</Text>
-              <Text style={styles.donorArea}>{item.area}</Text>
-            </View>
+            {showFeatured && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                  Featured Experiences
+                </Text>
+                <FlatList
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  data={FEATURED}
+                  keyExtractor={(item) => item.id}
+                  contentContainerStyle={styles.featuredList}
+                  renderItem={({ item }) => (
+                    <DestinationCard
+                      destination={item}
+                      variant="featured"
+                      bookmarked={isInTrip(item.id)}
+                      onToggleBookmark={() => toggleBookmark(item.id)}
+                    />
+                  )}
+                />
+              </View>
+            )}
 
             <Text
-              style={[
-                styles.availability,
-                item.available ? styles.available : styles.unavailable,
-              ]}
+              style={[styles.sectionTitle, styles.section, { color: colors.text }]}
             >
-              {item.available ? "Available" : "Resting"}
+              Explore Sri Lanka
             </Text>
-          </Pressable>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <DestinationCard
+            destination={item}
+            bookmarked={isInTrip(item.id)}
+            onToggleBookmark={() => toggleBookmark(item.id)}
+          />
         )}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>No donors found</Text>
+          <Text style={[styles.emptyText, { color: colors.subtext }]}>
+            No destinations found
+          </Text>
         }
       />
     </View>
@@ -91,117 +199,70 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f4f4f4",
+  },
+
+  listContent: {
     paddingTop: 60,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+  },
+
+  greeting: {
+    fontSize: 14,
+    fontWeight: "600",
   },
 
   title: {
-    fontSize: 26,
-    fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
+    fontSize: 28,
+    fontWeight: "700",
+    marginTop: 2,
+    marginBottom: spacing.lg,
   },
 
   searchInput: {
-    backgroundColor: "white",
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: 12,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 13,
+    fontSize: 15,
+    marginBottom: spacing.md,
   },
 
   chipGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 12,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
 
   chip: {
-    paddingHorizontal: 14,
+    paddingHorizontal: spacing.md,
     paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "white",
-    borderWidth: 1,
-    borderColor: "#ddd",
-  },
-
-  chipSelected: {
-    backgroundColor: "#c0392b",
-    borderColor: "#c0392b",
+    borderRadius: radius.pill,
   },
 
   chipText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#333",
-  },
-
-  chipTextSelected: {
-    color: "white",
-  },
-
-  donorCard: {
-    backgroundColor: "white",
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  bloodBadge: {
-    width: 45,
-    height: 45,
-    borderRadius: 25,
-    backgroundColor: "#c0392b",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 15,
-  },
-
-  bloodBadgeText: {
     fontSize: 13,
-    fontWeight: "bold",
-    color: "white",
+    fontWeight: "600",
   },
 
-  donorInfo: {
-    flex: 1,
+  section: {
+    marginTop: spacing.lg,
   },
 
-  donorName: {
+  sectionTitle: {
     fontSize: 18,
-    fontWeight: "bold",
+    fontWeight: "700",
+    marginBottom: spacing.md,
   },
 
-  donorArea: {
-    fontSize: 14,
-    marginTop: 4,
-    color: "#555",
-  },
-
-  availability: {
-    fontSize: 13,
-    fontWeight: "600",
-  },
-
-  available: {
-    color: "#27ae60",
-  },
-
-  unavailable: {
-    color: "#999",
+  featuredList: {
+    paddingRight: spacing.md,
   },
 
   emptyText: {
     textAlign: "center",
     marginTop: 40,
-    fontSize: 16,
-    color: "#777",
+    fontSize: 15,
   },
 });

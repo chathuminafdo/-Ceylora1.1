@@ -1,36 +1,55 @@
-# BloodLink — Blood Donor Directory
+# Ceylora — Sri Lanka Travel Planner
 
 ## Target Domain
-Healthcare — emergency blood supply coordination.
+Travel & Tourism — specifically domestic and inbound travel within Sri Lanka.
 
 ## Problem Statement
-When a hospital or blood bank needs blood urgently, coordinators currently work through
-paper lists or spreadsheets, calling donors one by one until they find someone with the
-right blood type who is actually available. This is slow and error-prone in a
-time-critical situation.
+Travellers exploring Sri Lanka face a scattered set of resources — blogs, generic
+map apps, and word of mouth — to figure out what's actually worth visiting in a
+given district, whether it matches what they're after (sightseeing, religious
+sites, or a place to stay), and in what order to visit everything on their list
+without doubling back across the country.
 
-BloodLink gives a hospital/blood bank coordinator a searchable, filterable directory of
-registered donors so they can immediately see who has a compatible blood type, where
-they are located, and whether they are currently available to donate.
+Ceylora gives travellers a single, curated directory of Sri Lankan destinations
+that can be searched by district, filtered by interest, and assembled into a
+day-by-day trip with a one-tap route optimizer.
 
 ## How the App Solves It
-- **Home screen** — a `FlatList` of donors with a search bar (by name or area) and
-  blood-type filter chips, so a coordinator can narrow a list of donors down to
-  "O- donors near Colombo" in seconds instead of scrolling a spreadsheet.
-- **Donor Detail screen** — tap any donor to see their phone number, last donation
-  date, and an availability toggle, plus a one-tap "Call Donor" button.
-- **Settings screen** — set a default blood-type filter so the Home screen opens
-  already scoped to the type the coordinator needs most often.
+- **Home screen** — a `FlatList` of destinations with a search bar (by district
+  or destination name) and Fun / Faith / Stay filter chips, so a traveller can
+  narrow the country down to "temples near Kandy" or "beaches in Matara" in
+  seconds.
+- **Destination Detail screen** — tap any destination to see a full description,
+  an "Open in Maps" link to its coordinates, and a one-tap "Add to Trip" button.
+- **Trip Planner screen** — the traveller's bucket list of saved destinations,
+  with an **Optimize Route** button that reorders the stops using a
+  nearest-neighbour algorithm (Haversine great-circle distance) starting from
+  Colombo — a simple, explainable approximation of the travelling-salesman
+  problem that avoids doubling back across the island.
+- **Settings screen** — dark/light mode toggle and an About card.
 
 ## Screens
-1. **Home** (`app/(tabs)/index.tsx`) — donor list, search, blood-type filter.
-2. **Donor Detail** (`app/donor/[id].tsx`) — full donor profile, availability toggle.
-3. **Settings** (`app/(tabs)/settings.tsx`) — default blood-type filter preference.
+1. **Home** (`app/(tabs)/index.tsx`) — destination list, search, category filter.
+2. **Destination Detail** (`app/destination/[id].tsx`) — full details, map link,
+   add/remove trip.
+3. **Trip Planner** (`app/(tabs)/trip.tsx`) — bucket list + route optimizer.
+4. **Settings** (`app/(tabs)/settings.tsx`) — dark mode, about.
 
-## State (`useState`)
-- Search text and selected blood-type filter on the Home screen.
-- Availability toggle on the Donor Detail screen.
-- Default blood-type preference on the Settings screen.
+## State & Architecture
+- `useState` for search text and selected category (Home), and the
+  optimize/added-order toggle (Trip).
+- **React Context** (`context/trip.tsx`) shares the trip bucket list across
+  Home, Detail, and Trip screens without prop drilling.
+- **React Context** (`context/theme.tsx`) shares the light/dark theme the same
+  way, driven by a toggle in Settings.
+- `lib/route.ts` holds the pure route-optimization logic (Haversine distance +
+  greedy nearest-neighbour ordering) — no external API required.
+
+## Design Note
+Destination coordinates power an "Open in Maps" deep link rather than an
+embedded interactive map, to avoid requiring a Google Maps API key / native map
+config for a Sprint 1 prototype. The link opens the location directly in the
+device's Maps app.
 
 ## Setup Instructions
 1. Install dependencies:
@@ -44,4 +63,5 @@ they are located, and whether they are currently available to donate.
 3. Scan the QR code with Expo Go on Android, or press `a` to launch an Android emulator.
 
 ## Screenshots
-_Add screenshots of the Home, Donor Detail, and Settings screens here before submission._
+_Add screenshots of the Home, Destination Detail, Trip Planner, and Settings
+screens here before submission._
