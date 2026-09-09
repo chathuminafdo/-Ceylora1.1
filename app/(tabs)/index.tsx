@@ -12,6 +12,7 @@ import {
   Category,
   categoryMeta,
   destinations,
+  Destination,
 } from "@/data/destinations";
 import { radius, spacing, useAppTheme } from "@/context/theme";
 import { useTrip } from "@/context/trip";
@@ -61,11 +62,11 @@ export default function HomeScreen() {
     return matchesSearch && matchesCategory;
   });
 
-  const toggleBookmark = (id: string) => {
-    if (isInTrip(id)) {
-      removeFromTrip(id);
+  const toggleBookmark = (place: Destination) => {
+    if (isInTrip(place.id)) {
+      removeFromTrip(place.id);
     } else {
-      addToTrip(id);
+      addToTrip(place);
     }
   };
 
@@ -165,7 +166,7 @@ export default function HomeScreen() {
                       destination={item}
                       variant="featured"
                       bookmarked={isInTrip(item.id)}
-                      onToggleBookmark={() => toggleBookmark(item.id)}
+                      onToggleBookmark={() => toggleBookmark(item)}
                     />
                   )}
                 />
@@ -183,7 +184,7 @@ export default function HomeScreen() {
           <DestinationCard
             destination={item}
             bookmarked={isInTrip(item.id)}
-            onToggleBookmark={() => toggleBookmark(item.id)}
+            onToggleBookmark={() => toggleBookmark(item)}
           />
         )}
         ListEmptyComponent={

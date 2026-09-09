@@ -14,6 +14,8 @@ export type AppColors = {
   sage: string;
   sand: string; // used sparingly, for premium highlights
   success: string;
+  danger: string;
+  dangerSoft: string;
   muted: string;
 };
 
@@ -29,6 +31,8 @@ const lightColors: AppColors = {
   sage: "#8FAF9A",
   sand: "#D8B98A",
   success: "#3E8E5A",
+  danger: "#C0392B",
+  dangerSoft: "#FBE7E4",
   muted: "#A9B6B2",
 };
 
@@ -44,6 +48,8 @@ const darkColors: AppColors = {
   sage: "#5F7A6C",
   sand: "#C9A876",
   success: "#3ECF72",
+  danger: "#FF6B5E",
+  dangerSoft: "#3A1F1C",
   muted: "#7A7A7A",
 };
 

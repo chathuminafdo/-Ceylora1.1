@@ -5,6 +5,7 @@ import { categoryMeta, destinations, stayMeta } from "@/data/destinations";
 import { radius, spacing, useAppTheme } from "@/context/theme";
 import { useTrip } from "@/context/trip";
 import { DestinationHero } from "@/components/destination-hero";
+import { DestinationMap } from "@/components/destination-map";
 import { Button } from "@/components/ui/button";
 
 export default function DestinationDetailScreen() {
@@ -93,6 +94,16 @@ export default function DestinationDetailScreen() {
         </View>
       )}
 
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
+        <Text style={[styles.stayTitle, { color: colors.text }]}>Location</Text>
+        <DestinationMap
+          latitude={place.latitude}
+          longitude={place.longitude}
+          name={place.name}
+          height={180}
+        />
+      </View>
+
       <Button
         label="Open in Maps"
         variant="secondary"
@@ -104,7 +115,7 @@ export default function DestinationDetailScreen() {
         label={bookmarked ? "Remove from Trip" : "Add to Trip"}
         variant="primary"
         onPress={() =>
-          bookmarked ? removeFromTrip(place.id) : addToTrip(place.id)
+          bookmarked ? removeFromTrip(place.id) : addToTrip(place)
         }
       />
     </ScrollView>
