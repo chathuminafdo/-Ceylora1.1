@@ -74,10 +74,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
     fetchTripItems()
       .then((rawServerItems) => {
         setTripItems((prev) => {
+          // Re-validate prev too — belt-and-suspenders in case any bad
+          // record ever slips into state through a path that doesn't
+          // already guard against it, so this can't crash the merge below.
+          const validPrev = prev.filter(isValidTripItem);
           // Keep any local stop the server doesn't know about yet (still
           // mid-sync), and drop any the server returned that we've since
           // deleted locally but hasn't confirmed.
-          const unsynced = prev.filter((item) => item.id.startsWith("temp-"));
+          const unsynced = validPrev.filter((item) => item.id.startsWith("temp-"));
           const visibleServerItems = rawServerItems.filter(isValidTripItem).filter(
             (item) => !pendingDeleteIdsRef.current.has(item.destinationId)
           );
@@ -128,6 +132,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
       addedAt: tempItem.addedAt,
     })
       .then((saved) => {
+        if (!isValidTripItem(saved)) {
+          // A misconfigured API resource (e.g. a schema field shadowing the
+          // real "id") can return a malformed record on success. Leave the
+          // temp item in place rather than merging in something that would
+          // corrupt state and crash on the next update.
+          setError("The server's response looked malformed — this stop is saved on your device and will retry on next refresh.");
+          return;
+        }
         setTripItems((prev) => {
           const next = prev.map((item) => (item.id === tempItem.id ? saved : item));
           saveCachedTripItems(next);
