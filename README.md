@@ -278,7 +278,3 @@ Planner stop.
 Scan to run the app with Expo Go:
 
 <img src="assets/images/screenshot-qr.png" alt="Expo Go QR code" width="260" />
-
-| Settings |
-|---|
-| ![Settings](assets/images/screenshot-settings.jpg) |
