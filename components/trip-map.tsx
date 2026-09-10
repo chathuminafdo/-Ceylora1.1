@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import MapView, { Marker, Polyline } from "react-native-maps";
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
 
 import { Destination } from "@/data/destinations";
+import { fetchRoadRoute } from "@/lib/directions";
 import { COLOMBO } from "@/lib/route";
 import { radius, useAppTheme } from "@/context/theme";
 
@@ -18,30 +19,48 @@ export function TripMap({ stops, height = 200 }: TripMapProps) {
   const { colors } = useAppTheme();
   const mapRef = useRef<MapView>(null);
 
-  useEffect(() => {
-    if (stops.length === 0) return;
-    const coordinates = [
-      COLOMBO,
-      ...stops.map((stop) => ({ latitude: stop.latitude, longitude: stop.longitude })),
-    ];
-    mapRef.current?.fitToCoordinates(coordinates, {
-      edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
-      animated: true,
-    });
-  }, [stops]);
-
-  if (stops.length === 0) return null;
-
-  const routeCoordinates = [
+  const straightLineCoordinates = [
     COLOMBO,
     ...stops.map((stop) => ({ latitude: stop.latitude, longitude: stop.longitude })),
   ];
+  const stopSignature = stops.map((stop) => stop.id).join(",");
+
+  const [roadRoute, setRoadRoute] = useState<{ latitude: number; longitude: number }[] | null>(
+    null
+  );
+
+  useEffect(() => {
+    if (stops.length === 0) return;
+
+    let cancelled = false;
+    setRoadRoute(null);
+    fetchRoadRoute(straightLineCoordinates).then((route) => {
+      if (!cancelled) setRoadRoute(route);
+    });
+
+    mapRef.current?.fitToCoordinates(straightLineCoordinates, {
+      edgePadding: { top: 40, right: 40, bottom: 40, left: 40 },
+      animated: true,
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // straightLineCoordinates is derived fresh from stops every render —
+    // stopSignature is the stable value that should actually retrigger this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stopSignature]);
+
+  if (stops.length === 0) return null;
+
+  const routeCoordinates = roadRoute ?? straightLineCoordinates;
 
   return (
     <View style={[styles.container, { height }]}>
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
+        provider={PROVIDER_GOOGLE}
         initialRegion={{
           latitude: stops[0].latitude,
           longitude: stops[0].longitude,

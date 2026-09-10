@@ -13,6 +13,19 @@ export interface ApiTripItem {
 
 export type NewTripItem = Omit<ApiTripItem, "id">;
 
+// Guards against malformed records from MockAPI or a stale local cache —
+// e.g. a resource whose "id" field was accidentally overridden by a custom
+// schema field, which silently drops the real `id` key from every response.
+export function isValidTripItem(value: unknown): value is ApiTripItem {
+  const item = value as Partial<ApiTripItem> | null | undefined;
+  return (
+    typeof item?.id === "string" &&
+    item.id.length > 0 &&
+    typeof item?.destinationId === "string" &&
+    item.destinationId.length > 0
+  );
+}
+
 const REQUEST_TIMEOUT_MS = 10000;
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {

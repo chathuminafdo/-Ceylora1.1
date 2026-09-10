@@ -1,10 +1,11 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 
 import { Destination, categoryMeta } from "@/data/destinations";
+import { destinationPhotos } from "@/data/destination-photos";
 import { radius, spacing, useAppTheme } from "@/context/theme";
-import { DestinationHero } from "@/components/destination-hero";
 
 type DestinationCardProps = {
   destination: Destination;
@@ -32,11 +33,14 @@ export function DestinationCard({
       ]}
       onPress={() => router.push(`/destination/${destination.id}`)}
     >
-      <DestinationHero
-        category={primaryCategory}
-        height={isFeatured ? 170 : 108}
-        iconSize={isFeatured ? 40 : 26}
-      >
+      <View style={[styles.imageArea, { height: isFeatured ? 170 : 108 }]}>
+        <Image
+          source={destinationPhotos[destination.id]}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={150}
+        />
+
         <Pressable
           hitSlop={10}
           onPress={onToggleBookmark}
@@ -65,7 +69,7 @@ export function DestinationCard({
             </Text>
           </LinearGradient>
         )}
-      </DestinationHero>
+      </View>
 
       {!isFeatured && (
         <View style={styles.body}>
@@ -109,6 +113,11 @@ const styles = StyleSheet.create({
     width: 220,
     marginRight: spacing.md,
     marginBottom: 0,
+  },
+
+  imageArea: {
+    borderRadius: radius.lg,
+    overflow: "hidden",
   },
 
   bookmarkButton: {

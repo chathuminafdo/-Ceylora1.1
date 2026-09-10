@@ -1,10 +1,11 @@
+import { Image } from "expo-image";
 import { Linking, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 
 import { categoryMeta, destinations, stayMeta } from "@/data/destinations";
+import { destinationPhotos } from "@/data/destination-photos";
 import { radius, spacing, useAppTheme } from "@/context/theme";
 import { useTrip } from "@/context/trip";
-import { DestinationHero } from "@/components/destination-hero";
 import { DestinationMap } from "@/components/destination-map";
 import { Button } from "@/components/ui/button";
 
@@ -34,12 +35,14 @@ export default function DestinationDetailScreen() {
     >
       <Stack.Screen options={{ title: place.name }} />
 
-      <DestinationHero
-        category={place.categories[0]}
-        height={200}
-        iconSize={54}
-        style={styles.hero}
-      />
+      <View style={styles.hero}>
+        <Image
+          source={destinationPhotos[place.id]}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={150}
+        />
+      </View>
 
       <Text style={[styles.name, { color: colors.text }]}>{place.name}</Text>
       <Text style={[styles.district, { color: colors.subtext }]}>
@@ -129,6 +132,9 @@ const styles = StyleSheet.create({
   },
 
   hero: {
+    height: 200,
+    borderRadius: radius.lg,
+    overflow: "hidden",
     marginBottom: spacing.lg,
   },
 

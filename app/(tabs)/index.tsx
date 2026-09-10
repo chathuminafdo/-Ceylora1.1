@@ -47,8 +47,9 @@ export default function HomeScreen() {
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(
     null
   );
-
   const greeting = useMemo(getGreeting, []);
+
+  const isBrowsing = search.length === 0 && selectedCategory === null;
 
   const filteredDestinations = destinations.filter((place) => {
     const query = search.toLowerCase();
@@ -69,8 +70,6 @@ export default function HomeScreen() {
       addToTrip(place);
     }
   };
-
-  const showFeatured = search.length === 0 && selectedCategory === null;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -150,7 +149,7 @@ export default function HomeScreen() {
               })}
             </View>
 
-            {showFeatured && (
+            {isBrowsing && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>
                   Featured Experiences

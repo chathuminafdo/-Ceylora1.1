@@ -38,7 +38,7 @@ export default function SettingsScreen() {
           itinerary.
         </Text>
         <Text style={[styles.version, { color: colors.accent }]}>
-          Version 1.0
+          Version 1.1
         </Text>
       </View>
     </View>

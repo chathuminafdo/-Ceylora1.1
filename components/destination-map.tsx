@@ -1,5 +1,5 @@
 import { Linking, Pressable, StyleSheet } from "react-native";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
 import { radius } from "@/context/theme";
 
@@ -28,6 +28,7 @@ export function DestinationMap({
     >
       <MapView
         style={StyleSheet.absoluteFill}
+        provider={PROVIDER_GOOGLE}
         initialRegion={{
           latitude,
           longitude,

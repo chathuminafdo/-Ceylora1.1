@@ -13,6 +13,7 @@ import {
   createTripItem,
   deleteTripItem,
   fetchTripItems,
+  isValidTripItem,
   updateTripItem,
 } from "@/lib/api";
 import {
@@ -30,7 +31,7 @@ type TripContextValue = {
   addToTrip: (destination: Destination) => void;
   removeFromTrip: (destinationId: string) => void;
   updateNote: (destinationId: string, notes: string) => void;
-  moveTripItem: (destinationId: string, direction: "up" | "down") => void;
+  reorderTrip: (orderedDestinationIds: string[]) => void;
   isInTrip: (destinationId: string) => boolean;
 };
 
@@ -53,12 +54,16 @@ export function TripProvider({ children }: { children: ReactNode }) {
     // a fast network response and a slow AsyncStorage read can arrive in
     // either order, and the stale cache can overwrite freshly-synced data.
     (async () => {
-      const [cached, pendingDeleteIds] = await Promise.all([
+      const [rawCached, pendingDeleteIds] = await Promise.all([
         loadCachedTripItems(),
         loadPendingDeleteIds(),
       ]);
       pendingDeleteIdsRef.current = new Set(pendingDeleteIds);
+
+      const cached = rawCached.filter(isValidTripItem);
       if (cached.length > 0) setTripItems(cached);
+      if (cached.length !== rawCached.length) saveCachedTripItems(cached);
+
       refresh();
     })();
   }, []);
@@ -67,13 +72,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     fetchTripItems()
-      .then((serverItems) => {
+      .then((rawServerItems) => {
         setTripItems((prev) => {
           // Keep any local stop the server doesn't know about yet (still
           // mid-sync), and drop any the server returned that we've since
           // deleted locally but hasn't confirmed.
           const unsynced = prev.filter((item) => item.id.startsWith("temp-"));
-          const visibleServerItems = serverItems.filter(
+          const visibleServerItems = rawServerItems.filter(isValidTripItem).filter(
             (item) => !pendingDeleteIdsRef.current.has(item.destinationId)
           );
           const dedupedUnsynced = unsynced.filter(
@@ -178,20 +183,20 @@ export function TripProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const moveTripItem = (destinationId: string, direction: "up" | "down") => {
+  const reorderTrip = (orderedDestinationIds: string[]) => {
     setTripItems((prev) => {
-      const index = prev.findIndex((item) => item.destinationId === destinationId);
-      if (index < 0) return prev;
+      const byDestinationId = new Map(prev.map((item) => [item.destinationId, item]));
+      const reordered = orderedDestinationIds
+        .map((destinationId, index) => {
+          const item = byDestinationId.get(destinationId);
+          return item ? { ...item, order: index } : null;
+        })
+        .filter((item): item is ApiTripItem => item !== null);
 
-      const swapWith = direction === "up" ? index - 1 : index + 1;
-      if (swapWith < 0 || swapWith >= prev.length) return prev;
+      if (reordered.length !== prev.length) return prev;
 
-      const swapped = [...prev];
-      [swapped[index], swapped[swapWith]] = [swapped[swapWith], swapped[index]];
-      const reordered = swapped.map((item, i) => ({ ...item, order: i }));
       saveCachedTripItems(reordered);
-
-      [reordered[index], reordered[swapWith]].forEach((item) => {
+      reordered.forEach((item) => {
         if (!item.id.startsWith("temp-")) {
           updateTripItem(item.id, { order: item.order }).catch(() => {});
         }
@@ -211,7 +216,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         addToTrip,
         removeFromTrip,
         updateNote,
-        moveTripItem,
+        reorderTrip,
         isInTrip,
       }}
     >

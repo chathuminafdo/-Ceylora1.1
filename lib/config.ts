@@ -10,13 +10,11 @@
 //      notes         : string
 //      order         : number
 //      addedAt       : string
-// 3. Copy your project's base URL (Project → click the resource →
-//    the URL shown looks like:
-//      https://<projectId>.mockapi.io/api/v1
-//    and paste it below, replacing the placeholder.
+// 3. Copy the "API endpoint" base URL shown on your project's dashboard
+//    (looks like https://<projectId>.mockapi.io — no /api/v1 suffix on
+//    newer MockAPI projects) and paste it below.
 // ============================================================
 
-export const MOCKAPI_BASE_URL =
-  "https://REPLACE_WITH_YOUR_MOCKAPI_PROJECT_ID.mockapi.io/api/v1";
+export const MOCKAPI_BASE_URL = "https://6aa2b5acccb3db9689a6f271.mockapi.io";
 
 export const TRIP_ITEMS_ENDPOINT = `${MOCKAPI_BASE_URL}/tripitems`;

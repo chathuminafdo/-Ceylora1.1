@@ -1,15 +1,19 @@
+import { Image } from "expo-image";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import DraggableFlatList, {
+  ScaleDecorator,
+} from "react-native-draggable-flatlist";
 
 import { Destination, destinations } from "@/data/destinations";
+import { destinationPhotos } from "@/data/destination-photos";
 import { radius, spacing, useAppTheme } from "@/context/theme";
 import { useTrip } from "@/context/trip";
 import { COLOMBO, distanceKm, optimizeRoute } from "@/lib/route";
@@ -25,7 +29,7 @@ export default function TripScreen() {
     refresh,
     removeFromTrip,
     updateNote,
-    moveTripItem,
+    reorderTrip,
   } = useTrip();
   const [optimized, setOptimized] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -134,7 +138,7 @@ export default function TripScreen() {
 
           {optimized && orderedStops.length > 1 && (
             <Text style={[styles.reorderHint, { color: colors.subtext }]}>
-              Turn off Optimize Route to reorder stops with the ▲▼ buttons
+              Turn off Optimize Route to drag stops into your own order
             </Text>
           )}
 
@@ -142,112 +146,118 @@ export default function TripScreen() {
             <TripMap stops={orderedStops} height={200} />
           </View>
 
-          <FlatList
-            key={optimized ? "optimized" : "added"}
+          <DraggableFlatList
             data={orderedStops}
-            extraData={{ orderedStops, editingId, draftNote, notesByDestination, optimized }}
+            extraData={{ editingId, draftNote, notesByDestination }}
             keyExtractor={(item) => item.id}
-            renderItem={({ item, index }) => {
+            onDragEnd={({ data }) => reorderTrip(data.map((stop) => stop.id))}
+            renderItem={({ item, drag, isActive, getIndex }) => {
+              const index = getIndex() ?? 0;
               const note = notesByDestination.get(item.id) ?? "";
               const isEditing = editingId === item.id;
 
               return (
-                <View style={[styles.stopCard, { backgroundColor: colors.card }]}>
-                  <View style={styles.stopRow}>
-                    <View style={[styles.orderBadge, { backgroundColor: colors.accent }]}>
-                      <Text style={styles.orderBadgeText}>{index + 1}</Text>
-                    </View>
-
-                    <View style={styles.stopInfo}>
-                      <Text style={[styles.stopName, { color: colors.text }]}>
-                        {item.name}
-                      </Text>
-                      <Text style={[styles.stopMeta, { color: colors.subtext }]}>
-                        {item.district} · {legs[index].toFixed(0)} km from
-                        previous stop
-                      </Text>
-                    </View>
-
-                    {!optimized && (
-                      <View style={styles.reorderButtons}>
+                <ScaleDecorator>
+                  <View
+                    style={[
+                      styles.stopCard,
+                      { backgroundColor: colors.card },
+                      isActive && { backgroundColor: colors.accentSoft },
+                    ]}
+                  >
+                    <View style={styles.stopRow}>
+                      {!optimized && (
                         <Pressable
-                          hitSlop={8}
-                          disabled={index === 0}
-                          onPress={() => moveTripItem(item.id, "up")}
+                          hitSlop={10}
+                          onPressIn={drag}
+                          disabled={isActive}
+                          style={styles.dragHandle}
                         >
-                          <Text
-                            style={[
-                              styles.reorderArrow,
-                              { color: index === 0 ? colors.border : colors.accent },
-                            ]}
-                          >
-                            ▲
+                          <Text style={[styles.dragHandleText, { color: colors.muted }]}>
+                            ☰
                           </Text>
                         </Pressable>
-                        <Pressable
-                          hitSlop={8}
-                          disabled={index === orderedStops.length - 1}
-                          onPress={() => moveTripItem(item.id, "down")}
+                      )}
+
+                      <View style={styles.thumbnail}>
+                        <Image
+                          source={destinationPhotos[item.id]}
+                          style={StyleSheet.absoluteFill}
+                          contentFit="cover"
+                        />
+                        <View
+                          style={[styles.orderBadge, { backgroundColor: colors.accent }]}
                         >
-                          <Text
-                            style={[
-                              styles.reorderArrow,
-                              {
-                                color:
-                                  index === orderedStops.length - 1
-                                    ? colors.border
-                                    : colors.accent,
-                              },
-                            ]}
-                          >
-                            ▼
+                          <Text style={styles.orderBadgeText}>{index + 1}</Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.stopInfo}>
+                        <Text style={[styles.stopName, { color: colors.text }]}>
+                          {item.name}
+                        </Text>
+                        <Text style={[styles.stopMeta, { color: colors.subtext }]}>
+                          {item.district} · {legs[index].toFixed(0)} km from
+                          previous stop
+                        </Text>
+                      </View>
+
+                      <Pressable
+                        hitSlop={10}
+                        disabled={isActive}
+                        onPress={() => removeFromTrip(item.id)}
+                      >
+                        <Text style={[styles.remove, { color: colors.muted }]}>✕</Text>
+                      </Pressable>
+                    </View>
+
+                    {isEditing ? (
+                      <View
+                        style={[
+                          styles.noteEditRow,
+                          { marginLeft: optimized ? 56 : 82 },
+                        ]}
+                      >
+                        <TextInput
+                          style={[
+                            styles.noteInput,
+                            {
+                              backgroundColor: colors.background,
+                              borderColor: colors.border,
+                              color: colors.text,
+                            },
+                          ]}
+                          placeholder="Add a note for this stop…"
+                          placeholderTextColor={colors.subtext}
+                          value={draftNote}
+                          onChangeText={setDraftNote}
+                          autoFocus
+                          multiline
+                        />
+                        <Pressable onPress={() => saveNote(item.id)} hitSlop={8}>
+                          <Text style={[styles.saveNote, { color: colors.accent }]}>
+                            Save
                           </Text>
                         </Pressable>
                       </View>
-                    )}
-
-                    <Pressable hitSlop={10} onPress={() => removeFromTrip(item.id)}>
-                      <Text style={[styles.remove, { color: colors.muted }]}>✕</Text>
-                    </Pressable>
-                  </View>
-
-                  {isEditing ? (
-                    <View style={styles.noteEditRow}>
-                      <TextInput
-                        style={[
-                          styles.noteInput,
-                          {
-                            backgroundColor: colors.background,
-                            borderColor: colors.border,
-                            color: colors.text,
-                          },
-                        ]}
-                        placeholder="Add a note for this stop…"
-                        placeholderTextColor={colors.subtext}
-                        value={draftNote}
-                        onChangeText={setDraftNote}
-                        autoFocus
-                        multiline
-                      />
-                      <Pressable onPress={() => saveNote(item.id)} hitSlop={8}>
-                        <Text style={[styles.saveNote, { color: colors.accent }]}>
-                          Save
+                    ) : (
+                      <Pressable
+                        disabled={isActive}
+                        onPress={() => startEditingNote(item.id)}
+                      >
+                        <Text
+                          style={[
+                            styles.noteText,
+                            { color: note ? colors.text : colors.subtext },
+                            { marginLeft: optimized ? 56 : 82 },
+                          ]}
+                        >
+                          {note || "+ Add a note"}
                         </Text>
                       </Pressable>
-                    </View>
-                  ) : (
-                    <Pressable onPress={() => startEditingNote(item.id)}>
-                      <Text
-                        style={[
-                          styles.noteText,
-                          { color: note ? colors.text : colors.subtext },
-                        ]}
-                      >
-                        {note || "+ Add a note"}
-                      </Text>
-                    </Pressable>
-                  )}
-                </View>
+                    )}
+                  </View>
+                </ScaleDecorator>
               );
             }}
           />
@@ -361,19 +371,40 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
+  dragHandle: {
+    marginRight: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+
+  dragHandleText: {
+    fontSize: 18,
+  },
+
+  thumbnail: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    overflow: "hidden",
+    marginRight: spacing.md,
+  },
+
   orderBadge: {
-    width: 32,
-    height: 32,
+    position: "absolute",
+    bottom: 2,
+    right: 2,
+    width: 20,
+    height: 20,
     borderRadius: radius.pill,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: spacing.md,
+    borderWidth: 1.5,
+    borderColor: "white",
   },
 
   orderBadgeText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 14,
+    fontSize: 11,
   },
 
   stopInfo: {
@@ -393,17 +424,6 @@ const styles = StyleSheet.create({
   remove: {
     fontSize: 18,
     marginLeft: spacing.sm,
-  },
-
-  reorderButtons: {
-    alignItems: "center",
-    marginLeft: spacing.sm,
-  },
-
-  reorderArrow: {
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: "700",
   },
 
   noteText: {
